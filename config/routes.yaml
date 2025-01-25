@@ -3,3 +3,12 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+login:
+    path: /login
+    controller: App\Controller\PagesContoller::login
+subscription:
+    path: /subscription
+    controller: App\Controller\PagesContoller::subscription
+subscription_submit:
+    path: /subscription/submit
+    controller: App\Controller\PagesController::submitSubscription
