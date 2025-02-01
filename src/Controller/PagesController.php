@@ -9,6 +9,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Psr\Log\LoggerInterface;
 use Doctrine\DBAL\Connection; // Import Doctrine DBAL Connection
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 final class PagesController extends AbstractController
 {
@@ -75,5 +77,44 @@ final class PagesController extends AbstractController
                 'message' => 'An error occurred while processing your subscription!'
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+    #[Route('/login/submit', name: 'login_submit', methods: ['POST'])]
+    public function loginSubmit(
+        Request $request, 
+        UserPasswordHasherInterface $passwordHasher, 
+        Connection $connection, 
+        SessionInterface $session
+    ): JsonResponse 
+    {
+        $data = json_decode($request->getContent(), true);
+    
+        if (empty($data['username']) || empty($data['password'])) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Both fields are required!'], Response::HTTP_BAD_REQUEST);
+        }
+    
+        $username = $data['username'];
+        $password = $data['password'];
+    
+        // Fetch user from the database
+        $user = $connection->fetchAssociative('SELECT * FROM users WHERE username = ?', [$username]);
+    
+        if (!$user) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials!'], Response::HTTP_UNAUTHORIZED);
+        }
+    
+        // Verify password
+        if (!password_verify($password, $user['password'])) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials!'], Response::HTTP_UNAUTHORIZED);
+        }
+    
+        // Store user session
+        $session->set('user_id', $user['id']);
+        $session->set('username', $user['username']);
+    
+        return new JsonResponse([
+            'status' => 'success', 
+            'message' => 'Login successful!',
+            'redirect' => '/home'
+        ]);
     }
 }

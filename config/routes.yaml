@@ -6,6 +6,9 @@ controllers:
 login:
     path: /login
     controller: App\Controller\PagesContoller::login
+login_submit:
+    path: /login/submit
+    controller: App\Controller\PagesController::loginSubmit
 subscription:
     path: /subscription
     controller: App\Controller\PagesContoller::subscription

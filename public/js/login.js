@@ -1,7 +1,7 @@
 class LoginPage {
     constructor() {
         this.form = document.querySelector('form');
-        this.emailField = document.getElementById('email');
+        this.usernameField = document.getElementById('username');
         this.passwordField = document.getElementById('password');
         this.initialize();
     }
@@ -12,18 +12,36 @@ class LoginPage {
         }
     }
 
-    handleSubmit(event) {
+    async handleSubmit(event) {
         event.preventDefault();
 
-        const email = this.emailField.value.trim();
+        const username = this.usernameField.value.trim();
         const password = this.passwordField.value.trim();
 
-        if (!email || !password) {
+        if (!username || !password) {
             alert('Both fields are required!');
             return;
         }
 
-        alert('Login successful (simulated)!');
+        try {
+            const response = await fetch('/login/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('Login successful! Redirecting...');
+                window.location.href = '/'; // Redirect to home page
+            } else {
+                alert(result.message || 'Invalid credentials');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('An error occurred. Please try again.');
+        }
     }
 }
 
