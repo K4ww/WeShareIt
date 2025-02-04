@@ -15,3 +15,6 @@ subscription:
 subscription_submit:
     path: /subscription/submit
     controller: App\Controller\PagesController::submitSubscription
+home:
+    path: /home
+    controller: App\Controller\PagesContoller::home

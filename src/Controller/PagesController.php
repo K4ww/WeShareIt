@@ -29,7 +29,11 @@ final class PagesController extends AbstractController
     {
         return $this->render('login.html.twig');
     }
-
+    #[Route('/home', name: 'home_page')]
+    public function home(): Response
+    {
+        return $this->render('home.html.twig');
+    }
     #[Route('/subscription', name: 'subscription_page')]
     public function subscription(): Response
     {
