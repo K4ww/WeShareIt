@@ -34,7 +34,7 @@ class LoginPage {
 
             if (response.ok) {
                 alert('Login successful! Redirecting...');
-                window.location.href = '/'; // Redirect to home page
+                window.location.href = 'home'; // Redirect to home page
             } else {
                 alert(result.message || 'Invalid credentials');
             }

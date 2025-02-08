@@ -46,13 +46,13 @@
         .content-section {
             display: none;
             padding: 20px;
-            background-color: #f0f0f0;
             border-radius: 8px;
             transition: background-color 0.5s ease;
+            max-width: 700px; /* Largeur maximale des posts */
+           
         }
         .content-section.active {
             display: block;
-            background-color: #dcdcdc;
         }
         .post {
             background-color: #ffffff;
@@ -111,6 +111,60 @@
         .post-footer i:hover {
             color:rgb(204, 0, 0);
         }
+        .container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 30px; /* Espacement entre la barre latérale et les posts */
+}
+
+/* Sidebar (Filtres) */
+.sidebar {
+    width: 300px; /* Largeur fixe */
+    position: fixed;
+    left: 20px; /* Collé à gauche */
+    top: 150px; /* Ajustement pour éviter d'être trop en haut */
+}
+
+#share {
+    max-width: 1000px;
+    margin: auto;
+}
+
+
+
+.btn-check:checked + .btn {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.post-card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: white;
+}
+
+.image-preview {
+    width: 200px;
+    height: auto;
+    margin-right: 10px;
+}
+
+.file-list {
+    list-style: none;
+    padding: 0;
+}
+
+.file-list li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+
+
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -138,6 +192,137 @@
             });
         });
     </script>
+    <script>
+    function timeAgo(timestamp) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - new Date(timestamp)) / 1000);
+    
+    const minute = 60;
+    const hour = minute * 60;
+    const day = hour * 24;
+    const month = day * 30;
+    const year = day * 365;
+    
+    let timeAgo = '';
+    
+    if (diffInSeconds < minute) {
+        timeAgo = `${diffInSeconds} secondes ago`;
+    } else if (diffInSeconds < hour) {
+        timeAgo = `${Math.floor(diffInSeconds / minute)} minutes ago`;
+    } else if (diffInSeconds < day) {
+        timeAgo = `${Math.floor(diffInSeconds / hour)} heures ago`;
+    } else if (diffInSeconds < month) {
+        timeAgo = `${Math.floor(diffInSeconds / day)} jours ago`;
+    } else if (diffInSeconds < year) {
+        timeAgo = `${Math.floor(diffInSeconds / month)} mois ago`;
+    } else {
+        timeAgo = `${Math.floor(diffInSeconds / year)} années ago`;
+    }
+    
+    return timeAgo;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    loadPosts();
+});
+
+function addPost() {
+    let postContent = document.getElementById("postContent").value;
+    let postFiles = document.getElementById("postFiles").files;
+    
+    // Get selected module
+    let selectedModule = document.querySelector('input[name="module"]:checked');
+    let moduleValue = selectedModule ? selectedModule.value : "No module selected";
+
+    if (postContent.trim() === "" && postFiles.length === 0) {
+        alert("Post content or at least one file is required!");
+        return;
+    }
+
+    let postId = Date.now(); // Timestamp for the post
+
+    let filesArray = [];
+    for (let i = 0; i < postFiles.length; i++) {
+        let file = postFiles[i];
+        filesArray.push({
+            name: file.name,
+            url: URL.createObjectURL(file),
+            type: file.type
+        });
+    }
+
+    let post = {
+        id: postId,
+        content: postContent,
+        module: moduleValue,
+        files: filesArray
+    };
+
+    let posts = JSON.parse(localStorage.getItem("userPosts")) || [];
+    posts.push(post);
+    localStorage.setItem("userPosts", JSON.stringify(posts));
+
+    document.getElementById("postForm").reset();
+    loadPosts();
+}
+
+function loadPosts() {
+    let postsContainer = document.getElementById("userPosts");
+    postsContainer.innerHTML = "";
+
+    let posts = JSON.parse(localStorage.getItem("userPosts")) || [];
+
+    posts.forEach(post => {
+        let postElement = document.createElement("div");
+        postElement.classList.add("post-card");
+
+        let filesHtml = post.files.map(file => {
+            if (file.type.startsWith("image/")) {
+                return `<img src="${file.url}" class="image-preview" alt="Uploaded Image">`;
+            } else {
+                return `<li><a href="${file.url}" target="_blank">${file.name}</a></li>`;
+            }
+        }).join("");
+
+        // Calculate the time ago
+        let timeSincePosted = timeAgo(post.id); // Use post.id as the timestamp
+
+        postElement.innerHTML = `
+            <p>${post.content}</p>
+            <p><strong>Module:</strong> ${post.module}</p>
+            <p><small>${timeSincePosted}</small></p> <!-- Display time ago -->
+            <div class="file-list">${filesHtml}</div>
+            <button class="btn btn-warning btn-sm mt-2" onclick="editPost(${post.id})">Edit</button>
+            <button class="btn btn-danger btn-sm mt-2" onclick="deletePost(${post.id})">Delete</button>
+        `;
+
+        postsContainer.appendChild(postElement);
+    });
+}
+
+
+function deletePost(postId) {
+    let posts = JSON.parse(localStorage.getItem("userPosts")) || [];
+    posts = posts.filter(post => post.id !== postId);
+    localStorage.setItem("userPosts", JSON.stringify(posts));
+    loadPosts();
+}
+
+function editPost(postId) {
+    let posts = JSON.parse(localStorage.getItem("userPosts")) || [];
+    let post = posts.find(post => post.id === postId);
+
+    if (post) {
+        let newContent = prompt("Edit your post:", post.content);
+        if (newContent !== null) {
+            post.content = newContent;
+            localStorage.setItem("userPosts", JSON.stringify(posts));
+            loadPosts();
+        }
+    }
+}
+</script>
+
 </head>
 <body>
     <nav class="navbar navbar-expand-lg fixed-top">
@@ -157,7 +342,56 @@
     </nav>
     
     <div class="container mt-5">
-        <div class="content-section active" id="home">
+    <div class="content-section active" id="home">
+          <!-- Sidebar (Search Filters) -->
+    <div class="sidebar me-4">
+        <div class="card p-3 shadow-sm">
+            <h5 class="text-center">Search Filters</h5>
+            <form>
+                <!-- University Dropdown -->
+                <div class="mb-3">
+                    <label for="university" class="form-label">University</label>
+                    <select id="university" class="form-select">
+                        <option value="">Select University</option>
+                        <option value="harvard">Harvard</option>
+                        <option value="mit">MIT</option>
+                        <option value="stanford">Stanford</option>
+                    </select>
+                </div>
+
+                <!-- Level Dropdown -->
+                <div class="mb-3">
+                    <label for="level" class="form-label">Level</label>
+                    <select id="level" class="form-select">
+                        <option value="">Select Level</option>
+                        <option value="undergraduate">Undergraduate</option>
+                        <option value="masters">Master’s</option>
+                        <option value="phd">PhD</option>
+                    </select>
+                </div>
+
+                <!-- Courses Dropdown -->
+                <div class="mb-3">
+                    <label for="course" class="form-label">Courses</label>
+                    <select id="course" class="form-select">
+                        <option value="">Select Course</option>
+                        <option value="cs">Computer Science</option>
+                        <option value="business">Business</option>
+                        <option value="engineering">Engineering</option>
+                    </select>
+                </div>
+
+                <!-- Date Picker -->
+                <div class="mb-3">
+                    <label for="date" class="form-label">Choose Date</label>
+                    <input type="date" id="date" class="form-control">
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            </form>
+        </div>
+    </div>
             <!-- Post 1 -->
             <div class="post">
                 <div class="post-header">
@@ -219,7 +453,63 @@
                 </div>
             </div>
         </div>
-        <div class="content-section" id="share">Share Content</div>
+    <div class="content-section" id="share">
+    <div class="container mt-4">
+    <h3 class="text-center">Your Posts</h3>
+    
+    <div class="row">
+        <!-- Smaller Form Column -->
+        <div class="col-md-10">
+            <div class="card p-4 mb-4 shadow-sm">
+                <h5 class="text-center">Create a New Post</h5>
+                <form id="postForm">
+                    <div class="mb-3">
+                        <label for="postContent" class="form-label">Post Content</label>
+                        <textarea id="postContent" class="form-control" rows="3" placeholder="Write something..."></textarea>
+                    </div>
+
+                    <!-- Module Selection (Radio Buttons) -->
+                    <div class="mb-3">
+                        <label class="form-label">Select a Module</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="module" id="module-math" value="Mathematics">
+                            <label class="btn btn-outline-primary" for="module-math">Mathematics</label>
+
+                            <input type="radio" class="btn-check" name="module" id="module-cs" value="Computer Science">
+                            <label class="btn btn-outline-primary" for="module-cs">Computer Science</label>
+
+                            <input type="radio" class="btn-check" name="module" id="module-physics" value="Physics">
+                            <label class="btn btn-outline-primary" for="module-physics">Physics</label>
+
+                            <input type="radio" class="btn-check" name="module" id="module-business" value="Business">
+                            <label class="btn btn-outline-primary" for="module-business">Business</label>
+
+                            <input type="radio" class="btn-check" name="module" id="module-engineering" value="Engineering">
+                            <label class="btn btn-outline-primary" for="module-engineering">Engineering</label>
+                        </div>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="mb-3">
+                        <label for="postFiles" class="form-label">Upload Files (Images, PDFs, Docs, etc.)</label>
+                        <input type="file" id="postFiles" class="form-control" multiple>
+                    </div>
+
+                    <button type="button" class="btn btn-primary w-100" onclick="addPost()">Post</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Larger Posts Section -->
+        <div class="col-md-8">
+            <div id="userPosts">
+                <!-- Posts will be displayed here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div>
         <div class="content-section" id="profile">Profile Content</div>
     </div>
 </body>
